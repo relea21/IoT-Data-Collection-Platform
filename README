@@ -1,0 +1,9 @@
+Relea Florin 341C3
+
+Pentru rularea temei se foloseste comanda ./run.sh
+
+mqtt-client se ocupa de partea de adaptor. La conectarea la brokerul mqtt
+acesta urmeaza sa se aboneze la toate topicurile. La primirea unui mesaj pe un anumit topic acesta 
+introduce in baza de date valorile
+mqtt-senzor prezinta imitarea unui senzor care trimite valori random pe un topic
+pentru brokerul de mesaje am ales eclipse-mosquitto

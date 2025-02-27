@@ -1,0 +1,95 @@
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    ports:
+      - '1883:1883'
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - MqttPipeline
+
+  mqtt-client:
+    image: mqtt-client
+    build:
+      context: ./mqtt-client
+    depends_on:
+      - influxdb
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=relea
+      - DOCKER_INFLUXDB_INIT_PASSWORD=florin212002
+      - DOCKER_INFLUXDB_INIT_ORG=upb
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensors_database
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=mytoken
+      - INFLUXDB_DB=sensors_database
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_ORG=upb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_TOKEN=mytoken
+    networks:
+      - InfluxPipeline
+      - MqttPipeline
+
+  # mqtt-senzor:
+  #   image: mqtt-senzor
+  #   build:
+  #     context: ./mqtt-senzor
+  #   depends_on:
+  #     - mqtt-client
+  #   networks:
+  #     - MqttPipeline
+
+  generator:
+    image: gitlab.cs.pub.ro:5050/scd/iot-generator
+    environment:
+      - MQTT_HOST=mqtt-broker
+    networks:
+      - MqttPipeline
+
+  influxdb:
+    image: influxdb:latest
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=relea
+      - DOCKER_INFLUXDB_INIT_PASSWORD=florin212002
+      - DOCKER_INFLUXDB_INIT_ORG=upb
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensors_database
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=mytoken
+      - INFLUXDB_DB=sensors_database
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_ORG=upb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_TOKEN=mytoken
+    volumes:
+      - influxdb-data:/var/lib/influxdb2:rw
+    networks:
+      - InfluxPipeline
+      - GrafanaInfluxPipeline
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - '80:3000'
+    depends_on:
+      - influxdb
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=asistent
+      - GF_SECURITY_ADMIN_PASSWORD=grafanaSCD2024
+    networks:
+      - GrafanaInfluxPipeline
+
+volumes:
+  influxdb-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  InfluxPipeline: {}
+
+  GrafanaInfluxPipeline: {}
+
+  MqttPipeline: {}
